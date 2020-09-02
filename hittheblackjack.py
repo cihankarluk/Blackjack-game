@@ -5,12 +5,14 @@ from time import sleep
 ROYALTY = ['Jack', 'Queen', 'King']
 
 
-def creating_deck(deck_size):
-    """
-    This function first creates a deck. Then shuffle it.
-    """
+class Card:
+    def __init__(self, value, suit):
+        self.value = value
+        self.suit = suit
+
+
+def create_deck(deck_size):
     total_deck = []
-    Card = namedtuple('Card', 'Value Suit')
     suits = ['Hearts', 'Diamonds', 'Club', 'Spade']
     values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 'Jack', 'Queen', 'King', 'Ace']
     for _ in range(deck_size):
@@ -21,47 +23,47 @@ def creating_deck(deck_size):
     return total_deck
 
 
-def card_pick(name, card_value, ace_checker, total_deck):
-    """
-    This function take 4 parameters which are name for user or dealer name,
-    card_value for calculating value of given cards.
-    ace_checker for if ace pulled from deck or not.
-    total_deck is the our deck. This function calculates the value of current
-    position and check if player is 21 or passed 21.
-    """
+def print_card_deals(name: str, pick_card: object, card_value: int):
+    print(f"{name} got {pick_card.suit} {pick_card.value}. "
+          f"Total point {name} got: {card_value}")
+
+
+def card_pick(name, hand_value, ace_checker, total_deck):
     pick_card = total_deck.pop()
-    if pick_card.Value in ROYALTY:
-        card_value += 10
-        print("{0} got {1} {2}. Total point {0} got: {3}"
-              .format(name, pick_card.Suit, pick_card.Value, card_value))
-    elif pick_card.Value == 'Ace':
-        if card_value < 11:
+
+    if pick_card.value in ROYALTY:
+        hand_value += 10
+        print_card_deals(name, pick_card, hand_value)
+    elif pick_card.value == 'Ace':
+        if hand_value < 11:
             ace_checker = True
-            card_value += 11
-            print("{0} got {1} {2}. Total point {0} got: {3}"
-                  .format(name, pick_card.Suit, pick_card.Value, card_value))
+            hand_value += 11
+            print_card_deals(name, pick_card, hand_value)
         else:
-            card_value += 1
-            print("{0} got {1} {2}. Total point {0} got: {3}"
-                  .format(name, pick_card.Suit, pick_card.Value, card_value))
+            hand_value += 1
+            print_card_deals(name, pick_card, hand_value)
     else:
-        card_value += pick_card.Value
-        if ace_checker and card_value > 21:
-            card_value -= 10
-            print("{0} got {1} {2}. Total point {0} got: {3}"
-                  .format(name, pick_card.Suit, pick_card.Value, card_value))
+        hand_value += pick_card.value
+        if ace_checker and hand_value > 21:
+            hand_value -= 10
+            print_card_deals(name, pick_card, hand_value)
             ace_checker = False
         else:
-            print("{0} got {1} {2}. Total point {0} got: {3}"
-                  .format(name, pick_card.Suit, pick_card.Value, card_value))
-    if card_value > 21 and name != "Dealer":
+            print_card_deals(name, pick_card, hand_value)
+
+    hand_control(hand_value, name)
+
+    return hand_value, ace_checker
+
+
+def hand_control(hand_value, name):
+    if hand_value > 21 and name != "Dealer":
         print("İki zarda 80'lik olduk...")
         exit()
-    elif card_value == 21 and name != "Dealer":
-        print("Total value: {}. \n Blackjack, Kazandınız..".format(card_value))
+    elif hand_value == 21 and name != "Dealer":
+        print(f"Total value: {hand_value}. \n Blackjack, Kazandınız..")
         print_it()
         exit()
-    return card_value, ace_checker
 
 
 def pick_card_dealer(name, card_value, ace_checker, total_deck):
@@ -70,20 +72,16 @@ def pick_card_dealer(name, card_value, ace_checker, total_deck):
     """
     pick_card = total_deck.pop()
     unknown_card = pick_card
-    if pick_card.Value in ROYALTY:
+    if pick_card.value in ROYALTY:
         card_value += 10
-        print("{} got closed card".format(name))
-    elif pick_card.Value == 'Ace':
-        if card_value < 11:
-            ace_checker = True
-            card_value += 11
-            print("{} got closed card".format(name))
-        else:
-            card_value += 1
-            print("{} got closed card".format(name))
+        print(f"{name} got closed card")
+    elif pick_card.value == 'Ace':
+        ace_checker = True
+        card_value += 11
+        print(f"{name} got closed card")
     else:
-        card_value += pick_card.Value
-        print("{} got closed card".format(name))
+        card_value += pick_card.value
+        print(f"{name} got closed card")
     return card_value, ace_checker, unknown_card
 
 
@@ -122,37 +120,45 @@ def print_it():
 
 
 if __name__ == '__main__':
-    u_name, d_name = "Player", "Dealer"
-    check = False
+    player, dealer, ace_check = "Player", "Dealer", False
+
     deck_count = int(input("How many decks will be in the game? --> "))
-    deck = creating_deck(deck_count)
-    user_value, ace_user = card_pick(u_name, 0, check, deck)
-    int_value, ace_bank, closed_card = pick_card_dealer(d_name, 0, check, deck)
-    user_value, ace_user = card_pick(u_name, user_value, ace_user, deck)
-    bank_value, ace_bank = card_pick(d_name, 0, ace_bank, deck)
+    deck = create_deck(deck_count)
+
+    player_hand, player_ace = card_pick(player, 0, ace_check, deck)
+    closed_card_value, dealer_ace, closed_card = pick_card_dealer(dealer, 0, ace_check, deck)
+    player_hand, ace_user = card_pick(player, player_hand, player_ace, deck)
+    dealer_hand, dealer_ace = card_pick(dealer, 0, dealer_ace, deck)
+
     while True:
         user_input = input('Do you wanna hit or stop?[h/s]')
         if user_input == 'h':
-            user_value, ace_user = card_pick(u_name, user_value, ace_user, deck)
+            player_hand, ace_user = card_pick(player, player_hand, ace_user, deck)
         elif user_input == 's':
             print("Evet beyler benim kumarım biter..")
             break
         else:
             print("Wrong input! Enter either h or s.")
-    bank_value += int_value
+
+    dealer_hand += closed_card_value
     sleep(2)
-    print(f'Dealer closed card is: {closed_card[1]} {closed_card[0]} '
-          f'and total point of dealer is: {bank_value}')
+    print(f'Dealer closed card is: {closed_card.value} {closed_card.suit} '
+          f'and total point of dealer is: {dealer_hand}')
+
     while True:
         sleep(2)
-        if bank_value > 21:
+        if dealer_hand > 21 and dealer_ace:
+            dealer_hand -= 10
+            dealer_ace = False
+        if dealer_hand > 21:
             print("PLAYER WON")
             print_it()
             break
-        elif bank_value == user_value and bank_value > 17:
+        elif dealer_hand == player_hand and dealer_hand > 17:
             print("ITS DRAW")
             break
-        elif bank_value > user_value:
+        elif dealer_hand > player_hand:
             print("BANK WON")
             break
-        bank_value, ace_bank = card_pick(d_name, bank_value, ace_bank, deck)
+
+        dealer_hand, dealer_ace = card_pick(dealer, dealer_hand, dealer_ace, deck)
